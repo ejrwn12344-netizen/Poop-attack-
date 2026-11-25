@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Poop Attack!</string>
+    <string name="step_expressions">Expressions</string>
+    <string name="step_scene">Scene</string>
+    <string name="step_storyboard">Storyboard</string>
+    <string name="step_video">Movie</string>
+    <string name="step_quiz">Quiz</string>
+    <string name="step_final">Finish</string>
+    <string name="warning_min_requirements">Add at least 5 expressions from 2 or more movies to build a rich story.</string>
+    <string name="btn_add_expression">Add Expression</string>
+    <string name="btn_next_scene">Next: Set the Scene</string>
+    <string name="btn_next_storyboard">Next: Build Storyboard</string>
+    <string name="btn_watch_video">Watch 30s Movie</string>
+    <string name="btn_take_quiz">Start Quiz</string>
+    <string name="btn_finish">See Wrap-Up</string>
+    <string name="btn_replay_video">Replay Video</string>
+    <string name="btn_retake_quiz">Retake Quiz</string>
+    <string name="btn_download_video">Download Video</string>
+    <string name="credit_footer">Made with Google AI Studio · Script by Lee Ju Won · Assisted by NotebookLM</string>
+</resources>
