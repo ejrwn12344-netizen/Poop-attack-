@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Poop Attack! — Movie English Short-Film Studio</title>
+  <link rel="icon" type="image/jpeg" href="./assets/images/img_poop_icon.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <div class="brand-row">
+          <img src="./assets/images/img_poop_icon.jpg" alt="Poop Attack mascot" class="brand-avatar" />
+          <div class="brand-text">
+            <h1 class="brand-title">Poop Attack!</h1>
+            <p class="brand-subtitle">Movie English Short-Film Studio</p>
+          </div>
+        </div>
+        <nav id="step-nav" class="step-nav" aria-label="Progress steps"></nav>
+      </div>
+    </header>
+
+    <main id="screen-root" class="screen-root"></main>
+  </div>
+
+  <!-- Modal Root (Add/Edit Expression, Edit Beat, Post-Video Quiz Pop-up) -->
+  <div id="modal-root" class="modal-backdrop hidden" role="dialog" aria-modal="true"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
