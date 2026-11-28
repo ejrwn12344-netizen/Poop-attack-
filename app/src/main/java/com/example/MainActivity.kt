@@ -73,7 +73,8 @@ fun PoopAttackApp(
     val beats by viewModel.beats.collectAsState()
     val totalWordCount by viewModel.totalWordCount.collectAsState()
     val aiState by viewModel.aiState.collectAsState()
-    val subtitlesEnabled by viewModel.subtitlesEnabled.collectAsState()
+    val koreanSubtitlesEnabled by viewModel.koreanSubtitlesEnabled.collectAsState()
+    val englishSubtitlesEnabled by viewModel.englishSubtitlesEnabled.collectAsState()
     val quizQuestions by viewModel.quizQuestions.collectAsState()
     val quizSelections by viewModel.quizSelections.collectAsState()
     val exportState by viewModel.exportState.collectAsState()
@@ -154,10 +155,12 @@ fun PoopAttackApp(
                 composable(Routes.VIDEO) {
                     VideoScreen(
                         beats = beats,
-                        subtitlesEnabled = subtitlesEnabled,
+                        koreanSubtitlesEnabled = koreanSubtitlesEnabled,
+                        englishSubtitlesEnabled = englishSubtitlesEnabled,
                         quizQuestions = quizQuestions,
                         quizSelections = quizSelections,
-                        onToggleSubtitles = viewModel::toggleSubtitles,
+                        onToggleKoreanSubtitles = viewModel::toggleKoreanSubtitles,
+                        onToggleEnglishSubtitles = viewModel::toggleEnglishSubtitles,
                         onSelectQuizAnswer = viewModel::selectQuizAnswer,
                         onGoToQuiz = { navController.navigate(Routes.QUIZ) },
                         onFinishToFinal = { navController.navigate(Routes.FINAL) }

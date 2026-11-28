@@ -25,6 +25,7 @@ data class SpokenSubtitleState(
     val speaker: String = "",
     val emotionLabel: String = "",
     val fullCleanText: String = "",
+    val koreanSubtitle: String = "",
     val spokenWordCount: Int = 0,
     val totalWords: Int = 0
 )
@@ -78,7 +79,6 @@ class ClipAudioPlayer(context: Context) {
                 allVoices.filter { it.locale.language == "en" }
             }
 
-            // Google TTS US English male voice suffixes/hints vs female voice hints
             val knownMaleHints = listOf("-iom-", "-iol-", "-tpd-", "-tpc-", "-iom", "-iol", "male", "man", "guy")
             val knownFemaleHints = listOf("-sfg-", "-tpf-", "-iob-", "-x-", "female", "woman", "girl")
 
@@ -97,10 +97,6 @@ class ClipAudioPlayer(context: Context) {
             friendAVoice = maleVoices.getOrNull(0)
             friendBVoice = maleVoices.getOrNull(1) ?: maleVoices.getOrNull(0)
             passerbyVoice = maleVoices.getOrNull(2) ?: maleVoices.lastOrNull()
-            Log.d(
-                TAG,
-                "Selected male voices: A=${friendAVoice?.name}, B=${friendBVoice?.name}, Passerby=${passerbyVoice?.name}"
-            )
         } catch (e: Exception) {
             Log.w(TAG, "Could not enumerate male TTS voices, using pitch-tuned default", e)
         }
@@ -128,6 +124,7 @@ class ClipAudioPlayer(context: Context) {
                 val idx = utteranceId?.removePrefix("line_")?.toIntOrNull() ?: return
                 val pair = activeQueue.getOrNull(idx) ?: return
                 val clean = pair.second.englishText.replace("**", "").trim()
+                val korean = pair.second.koreanSubtitle.trim()
                 val words = clean.split(Regex("\\s+")).filter { it.isNotBlank() }
                 val perf = performanceFor(pair.first, pair.second.speaker)
                 scope.launch {
@@ -136,11 +133,12 @@ class ClipAudioPlayer(context: Context) {
                         speaker = pair.second.speaker,
                         emotionLabel = perf.emotionLabel,
                         fullCleanText = clean,
+                        koreanSubtitle = korean,
                         spokenWordCount = 1.coerceAtMost(words.size),
                         totalWords = words.size
                     )
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        startWordTimer(pair.first, pair.second.speaker, perf.emotionLabel, clean, words.size)
+                        startWordTimer(pair.first, pair.second.speaker, perf.emotionLabel, clean, korean, words.size)
                     }
                 }
             }
@@ -149,6 +147,7 @@ class ClipAudioPlayer(context: Context) {
                 val idx = utteranceId?.removePrefix("line_")?.toIntOrNull() ?: return
                 val pair = activeQueue.getOrNull(idx) ?: return
                 val clean = pair.second.englishText.replace("**", "").trim()
+                val korean = pair.second.koreanSubtitle.trim()
                 val prefix = clean.take(end.coerceAtMost(clean.length))
                 val wordCount = prefix.trim().split(Regex("\\s+")).count { it.isNotBlank() }
                 val total = clean.split(Regex("\\s+")).count { it.isNotBlank() }
@@ -159,6 +158,7 @@ class ClipAudioPlayer(context: Context) {
                         speaker = pair.second.speaker,
                         emotionLabel = perf.emotionLabel,
                         fullCleanText = clean,
+                        koreanSubtitle = korean,
                         spokenWordCount = wordCount.coerceIn(1, total.coerceAtLeast(1)),
                         totalWords = total
                     )
@@ -191,6 +191,7 @@ class ClipAudioPlayer(context: Context) {
 
         val firstLine = lines.first()
         val firstClean = firstLine.englishText.replace("**", "").trim()
+        val firstKorean = firstLine.koreanSubtitle.trim()
         val firstWords = firstClean.split(Regex("\\s+")).filter { it.isNotBlank() }
         val firstPerf = performanceFor(beatId, firstLine.speaker)
         _subtitleState.value = SpokenSubtitleState(
@@ -198,6 +199,7 @@ class ClipAudioPlayer(context: Context) {
             speaker = firstLine.speaker,
             emotionLabel = firstPerf.emotionLabel,
             fullCleanText = firstClean,
+            koreanSubtitle = firstKorean,
             spokenWordCount = 1.coerceAtMost(firstWords.size),
             totalWords = firstWords.size
         )
@@ -214,6 +216,7 @@ class ClipAudioPlayer(context: Context) {
         val beatId = pair.first
         val line = pair.second
         val clean = line.englishText.replace("**", "").trim()
+        val korean = line.koreanSubtitle.trim()
         val perf = performanceFor(beatId, line.speaker)
 
         perf.voice?.let { tts?.voice = it }
@@ -226,7 +229,7 @@ class ClipAudioPlayer(context: Context) {
         tts?.speak(clean, TextToSpeech.QUEUE_FLUSH, params, "line_$queueIndex")
 
         val words = clean.split(Regex("\\s+")).count { it.isNotBlank() }
-        startWordTimer(beatId, line.speaker, perf.emotionLabel, clean, words)
+        startWordTimer(beatId, line.speaker, perf.emotionLabel, clean, korean, words)
     }
 
     private fun startWordTimer(
@@ -234,6 +237,7 @@ class ClipAudioPlayer(context: Context) {
         speaker: String,
         emotionLabel: String,
         clean: String,
+        korean: String,
         totalWords: Int
     ) {
         fallbackJob?.cancel()
@@ -249,6 +253,7 @@ class ClipAudioPlayer(context: Context) {
                         speaker = speaker,
                         emotionLabel = emotionLabel,
                         fullCleanText = clean,
+                        koreanSubtitle = korean,
                         spokenWordCount = w,
                         totalWords = totalWords
                     )
@@ -263,6 +268,7 @@ class ClipAudioPlayer(context: Context) {
         fallbackJob = scope.launch {
             for (line in lines) {
                 val clean = line.englishText.replace("**", "").trim()
+                val korean = line.koreanSubtitle.trim()
                 val words = clean.split(Regex("\\s+")).count { it.isNotBlank() }.coerceAtLeast(1)
                 val perf = performanceFor(beatId, line.speaker)
                 for (w in 1..words) {
@@ -271,6 +277,7 @@ class ClipAudioPlayer(context: Context) {
                         speaker = line.speaker,
                         emotionLabel = perf.emotionLabel,
                         fullCleanText = clean,
+                        koreanSubtitle = korean,
                         spokenWordCount = w,
                         totalWords = words
                     )

@@ -39,7 +39,8 @@ object VideoExporter {
     suspend fun exportMp4(
         context: Context,
         beats: List<StoryBeat>,
-        subtitlesEnabled: Boolean,
+        koreanSubtitlesEnabled: Boolean,
+        englishSubtitlesEnabled: Boolean,
         onProgress: (Float) -> Unit
     ): Pair<String, String> = withContext(Dispatchers.Default) {
         val fileName = "PoopAttack_Movie_${System.currentTimeMillis() / 1000}.mp4"
@@ -54,7 +55,14 @@ object VideoExporter {
         }
 
         try {
-            encodeVideoFile(tempFile, beats, bitmaps, subtitlesEnabled, onProgress)
+            encodeVideoFile(
+                tempFile,
+                beats,
+                bitmaps,
+                koreanSubtitlesEnabled,
+                englishSubtitlesEnabled,
+                onProgress
+            )
             val locationHint = saveToPublicStorage(context, tempFile, fileName)
             fileName to locationHint
         } finally {
@@ -67,7 +75,8 @@ object VideoExporter {
         outputFile: File,
         beats: List<StoryBeat>,
         bitmaps: Map<Int, Bitmap>,
-        subtitlesEnabled: Boolean,
+        koreanSubtitlesEnabled: Boolean,
+        englishSubtitlesEnabled: Boolean,
         onProgress: (Float) -> Unit
     ) {
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, WIDTH, HEIGHT).apply {
@@ -93,7 +102,7 @@ object VideoExporter {
         val totalFrames = TOTAL_DURATION_SEC * FPS
         val subtitlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 40f
+            textSize = 36f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             setShadowLayer(6f, 0f, 3f, Color.BLACK)
         }
@@ -171,20 +180,25 @@ object VideoExporter {
                     canvas.drawRoundRect(badgeRect, 20f, 20f, badgePaint)
                     canvas.drawText(badgeText, 48f, 60f, badgeTextPaint)
 
-                    if (subtitlesEnabled && activeBeat.lines.isNotEmpty()) {
+                    if ((koreanSubtitlesEnabled || englishSubtitlesEnabled) && activeBeat.lines.isNotEmpty()) {
                         val lineIdx = if (activeBeat.lines.size > 1 && beatProgress >= 0.5f) 1 else 0
-                        val cleanSubtitle = activeBeat.lines[lineIdx].englishText.replace("**", "").trim()
+                        val activeLine = activeBeat.lines[lineIdx]
+                        val parts = buildList {
+                            if (koreanSubtitlesEnabled) add(activeLine.koreanSubtitle.trim())
+                            if (englishSubtitlesEnabled) add(activeLine.englishText.replace("**", "").trim())
+                        }
+                        val combinedSubtitle = parts.joinToString("\n")
 
                         val maxSubWidth = WIDTH - 140
                         val layout = StaticLayout.Builder
-                            .obtain(cleanSubtitle, 0, cleanSubtitle.length, subtitlePaint, maxSubWidth)
+                            .obtain(combinedSubtitle, 0, combinedSubtitle.length, subtitlePaint, maxSubWidth)
                             .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                            .setMaxLines(2)
+                            .setMaxLines(4)
                             .build()
 
                         val boxHeight = layout.height + 28f
-                        val boxTop = HEIGHT - boxHeight - 32f
-                        val bgRect = RectF(56f, boxTop, WIDTH - 56f, HEIGHT - 32f)
+                        val boxTop = HEIGHT - boxHeight - 28f
+                        val bgRect = RectF(56f, boxTop, WIDTH - 56f, HEIGHT - 28f)
                         canvas.drawRoundRect(bgRect, 18f, 18f, boxPaint)
 
                         canvas.save()

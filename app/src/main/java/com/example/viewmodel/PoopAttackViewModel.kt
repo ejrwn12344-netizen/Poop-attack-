@@ -62,8 +62,11 @@ class PoopAttackViewModel : ViewModel() {
     private val _aiState = MutableStateFlow<AiRegenerateState>(AiRegenerateState.Idle)
     val aiState: StateFlow<AiRegenerateState> = _aiState.asStateFlow()
 
-    private val _subtitlesEnabled = MutableStateFlow(true)
-    val subtitlesEnabled: StateFlow<Boolean> = _subtitlesEnabled.asStateFlow()
+    private val _koreanSubtitlesEnabled = MutableStateFlow(true)
+    val koreanSubtitlesEnabled: StateFlow<Boolean> = _koreanSubtitlesEnabled.asStateFlow()
+
+    private val _englishSubtitlesEnabled = MutableStateFlow(false)
+    val englishSubtitlesEnabled: StateFlow<Boolean> = _englishSubtitlesEnabled.asStateFlow()
 
     private val _quizQuestions = MutableStateFlow(DefaultStoryData.quizQuestions)
     val quizQuestions: StateFlow<List<QuizQuestion>> = _quizQuestions.asStateFlow()
@@ -176,8 +179,12 @@ class PoopAttackViewModel : ViewModel() {
 
     // --- Video Screen Actions ---
 
-    fun toggleSubtitles() {
-        _subtitlesEnabled.value = !_subtitlesEnabled.value
+    fun toggleKoreanSubtitles() {
+        _koreanSubtitlesEnabled.value = !_koreanSubtitlesEnabled.value
+    }
+
+    fun toggleEnglishSubtitles() {
+        _englishSubtitlesEnabled.value = !_englishSubtitlesEnabled.value
     }
 
     // --- Quiz Screen Actions ---
@@ -200,7 +207,8 @@ class PoopAttackViewModel : ViewModel() {
                 val (fileName, location) = VideoExporter.exportMp4(
                     context = context.applicationContext,
                     beats = _beats.value,
-                    subtitlesEnabled = _subtitlesEnabled.value,
+                    koreanSubtitlesEnabled = _koreanSubtitlesEnabled.value,
+                    englishSubtitlesEnabled = _englishSubtitlesEnabled.value,
                     onProgress = { progress ->
                         _exportState.value = VideoExportState.Exporting(progress)
                     }

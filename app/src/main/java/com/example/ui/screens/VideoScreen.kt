@@ -105,10 +105,12 @@ private const val TOTAL_VIDEO_SECONDS = 30f
 @Composable
 fun VideoScreen(
     beats: List<StoryBeat>,
-    subtitlesEnabled: Boolean,
+    koreanSubtitlesEnabled: Boolean,
+    englishSubtitlesEnabled: Boolean,
     quizQuestions: List<QuizQuestion>,
     quizSelections: Map<Int, Int>,
-    onToggleSubtitles: () -> Unit,
+    onToggleKoreanSubtitles: () -> Unit,
+    onToggleEnglishSubtitles: () -> Unit,
     onSelectQuizAnswer: (Int, Int) -> Unit,
     onGoToQuiz: () -> Unit,
     onFinishToFinal: () -> Unit
@@ -227,10 +229,12 @@ fun VideoScreen(
                     elapsedSec = elapsedSec,
                     currentBeat = currentBeat,
                     subtitleState = subtitleState,
-                    subtitlesEnabled = subtitlesEnabled,
+                    koreanSubtitlesEnabled = koreanSubtitlesEnabled,
+                    englishSubtitlesEnabled = englishSubtitlesEnabled,
                     isFullScreen = false,
                     onPlayFromCover = { startOrResumePlayback() },
-                    onToggleSubtitles = onToggleSubtitles,
+                    onToggleKoreanSubtitles = onToggleKoreanSubtitles,
+                    onToggleEnglishSubtitles = onToggleEnglishSubtitles,
                     onToggleFullScreen = { isFullScreen = true }
                 )
             }
@@ -316,23 +320,6 @@ fun VideoScreen(
                         }
 
                         OutlinedButton(
-                            onClick = onToggleSubtitles,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier
-                                .height(54.dp)
-                                .testTag("video_cc_control_button")
-                        ) {
-                            Icon(
-                                imageVector = if (subtitlesEnabled) {
-                                    Icons.Default.ClosedCaption
-                                } else {
-                                    Icons.Default.ClosedCaptionDisabled
-                                },
-                                contentDescription = if (subtitlesEnabled) "Subtitles On" else "Subtitles Off"
-                            )
-                        }
-
-                        OutlinedButton(
                             onClick = { isFullScreen = true },
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
@@ -342,6 +329,84 @@ fun VideoScreen(
                             Icon(
                                 imageVector = Icons.Default.Fullscreen,
                                 contentDescription = "Full Screen"
+                            )
+                        }
+                    }
+
+                    // Independent Korean & English Subtitle Toggle Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = onToggleKoreanSubtitles,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (koreanSubtitlesEnabled) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (koreanSubtitlesEnabled) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("video_ko_control_button")
+                        ) {
+                            Icon(
+                                imageVector = if (koreanSubtitlesEnabled) {
+                                    Icons.Default.ClosedCaption
+                                } else {
+                                    Icons.Default.ClosedCaptionDisabled
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (koreanSubtitlesEnabled) "한글 자막 ON" else "한글 자막 OFF",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+
+                        Button(
+                            onClick = onToggleEnglishSubtitles,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (englishSubtitlesEnabled) {
+                                    MaterialTheme.colorScheme.secondary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (englishSubtitlesEnabled) {
+                                    MaterialTheme.colorScheme.onSecondary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("video_en_control_button")
+                        ) {
+                            Icon(
+                                imageVector = if (englishSubtitlesEnabled) {
+                                    Icons.Default.ClosedCaption
+                                } else {
+                                    Icons.Default.ClosedCaptionDisabled
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (englishSubtitlesEnabled) "영어 자막 ON" else "영어 자막 OFF",
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
                     }
@@ -419,12 +484,14 @@ fun VideoScreen(
             elapsedSec = elapsedSec,
             currentBeat = currentBeat,
             subtitleState = subtitleState,
-            subtitlesEnabled = subtitlesEnabled,
+            koreanSubtitlesEnabled = koreanSubtitlesEnabled,
+            englishSubtitlesEnabled = englishSubtitlesEnabled,
             onPlayPause = {
                 if (isPlaying) pausePlayback() else startOrResumePlayback()
             },
             onReplay = { replayFromBeginning() },
-            onToggleSubtitles = onToggleSubtitles,
+            onToggleKoreanSubtitles = onToggleKoreanSubtitles,
+            onToggleEnglishSubtitles = onToggleEnglishSubtitles,
             onExitFullScreen = { isFullScreen = false }
         )
     }
@@ -451,10 +518,12 @@ private fun VideoStageViewport(
     elapsedSec: Float,
     currentBeat: StoryBeat,
     subtitleState: SpokenSubtitleState,
-    subtitlesEnabled: Boolean,
+    koreanSubtitlesEnabled: Boolean,
+    englishSubtitlesEnabled: Boolean,
     isFullScreen: Boolean,
     onPlayFromCover: () -> Unit,
-    onToggleSubtitles: () -> Unit,
+    onToggleKoreanSubtitles: () -> Unit,
+    onToggleEnglishSubtitles: () -> Unit,
     onToggleFullScreen: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -467,35 +536,40 @@ private fun VideoStageViewport(
                 isPlaying = isPlaying
             )
 
-            // Bottom Word-for-Word White Bold English Subtitles (Max 2 lines)
+            // Bottom Korean & English Subtitles (Korean on by default, independent toggles)
             androidx.compose.animation.AnimatedVisibility(
-                visible = subtitlesEnabled,
+                visible = koreanSubtitlesEnabled || englishSubtitlesEnabled,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
-                val activeText = if (subtitleState.beatId == currentBeat.id &&
-                    subtitleState.fullCleanText.isNotBlank()
-                ) {
+                val isCurrentBeatSub = subtitleState.beatId == currentBeat.id
+                val activeKoreanText = if (isCurrentBeatSub && subtitleState.koreanSubtitle.isNotBlank()) {
+                    subtitleState.koreanSubtitle
+                } else {
+                    currentBeat.lines.firstOrNull()?.koreanSubtitle.orEmpty()
+                }
+                val activeEnglishText = if (isCurrentBeatSub && subtitleState.fullCleanText.isNotBlank()) {
                     subtitleState.fullCleanText
                 } else {
                     currentBeat.lines.firstOrNull()?.englishText?.replace("**", "").orEmpty()
                 }
-                val spokenCount = if (subtitleState.beatId == currentBeat.id) {
-                    subtitleState.spokenWordCount
-                } else {
-                    0
-                }
+                val spokenCount = if (isCurrentBeatSub) subtitleState.spokenWordCount else 0
+                val totalWords = if (isCurrentBeatSub) subtitleState.totalWords else 0
                 WordSyncedSubtitleBanner(
-                    text = activeText,
-                    spokenWordCount = spokenCount
+                    koreanText = activeKoreanText,
+                    englishText = activeEnglishText,
+                    koreanEnabled = koreanSubtitlesEnabled,
+                    englishEnabled = englishSubtitlesEnabled,
+                    spokenWordCount = spokenCount,
+                    totalWords = totalWords
                 )
             }
         }
 
-        // Top overlay: Beat/Voice tag + CC On/Off + Full Screen Toggle
+        // Top overlay: Beat/Voice tag + KO/EN toggles + Full Screen Toggle
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -529,48 +603,50 @@ private fun VideoStageViewport(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (hasStarted) {
                     Surface(
-                        onClick = onToggleSubtitles,
+                        onClick = onToggleKoreanSubtitles,
                         shape = RoundedCornerShape(50),
-                        color = if (subtitlesEnabled) {
+                        color = if (koreanSubtitlesEnabled) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             Color.Black.copy(alpha = 0.65f)
                         },
                         modifier = Modifier
                             .minimumInteractiveComponentSize()
-                            .testTag(if (isFullScreen) "fs_cc_toggle_button" else "cc_toggle_button")
+                            .testTag(if (isFullScreen) "fs_ko_sub_toggle_button" else "ko_sub_toggle_button")
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = if (subtitlesEnabled) {
-                                    Icons.Default.ClosedCaption
-                                } else {
-                                    Icons.Default.ClosedCaptionDisabled
-                                },
-                                contentDescription = if (subtitlesEnabled) {
-                                    "Subtitles On"
-                                } else {
-                                    "Subtitles Off"
-                                },
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = if (subtitlesEnabled) "CC On" else "CC Off",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = if (koreanSubtitlesEnabled) "한글 ON" else "한글 OFF",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    Surface(
+                        onClick = onToggleEnglishSubtitles,
+                        shape = RoundedCornerShape(50),
+                        color = if (englishSubtitlesEnabled) {
+                            MaterialTheme.colorScheme.secondary
+                        } else {
+                            Color.Black.copy(alpha = 0.65f)
+                        },
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .testTag(if (isFullScreen) "fs_en_sub_toggle_button" else "en_sub_toggle_button")
+                    ) {
+                        Text(
+                            text = if (englishSubtitlesEnabled) "EN ON" else "EN OFF",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                        )
                     }
                 }
 
@@ -614,10 +690,12 @@ private fun FullScreenVideoDialog(
     elapsedSec: Float,
     currentBeat: StoryBeat,
     subtitleState: SpokenSubtitleState,
-    subtitlesEnabled: Boolean,
+    koreanSubtitlesEnabled: Boolean,
+    englishSubtitlesEnabled: Boolean,
     onPlayPause: () -> Unit,
     onReplay: () -> Unit,
-    onToggleSubtitles: () -> Unit,
+    onToggleKoreanSubtitles: () -> Unit,
+    onToggleEnglishSubtitles: () -> Unit,
     onExitFullScreen: () -> Unit
 ) {
     Dialog(
@@ -655,10 +733,12 @@ private fun FullScreenVideoDialog(
                             elapsedSec = elapsedSec,
                             currentBeat = currentBeat,
                             subtitleState = subtitleState,
-                            subtitlesEnabled = subtitlesEnabled,
+                            koreanSubtitlesEnabled = koreanSubtitlesEnabled,
+                            englishSubtitlesEnabled = englishSubtitlesEnabled,
                             isFullScreen = true,
                             onPlayFromCover = onPlayPause,
-                            onToggleSubtitles = onToggleSubtitles,
+                            onToggleKoreanSubtitles = onToggleKoreanSubtitles,
+                            onToggleEnglishSubtitles = onToggleEnglishSubtitles,
                             onToggleFullScreen = onExitFullScreen
                         )
                     }
@@ -869,15 +949,48 @@ private fun AnimatedBeatStage(
 
 @Composable
 private fun WordSyncedSubtitleBanner(
-    text: String,
-    spokenWordCount: Int
+    koreanText: String,
+    englishText: String,
+    koreanEnabled: Boolean,
+    englishEnabled: Boolean,
+    spokenWordCount: Int,
+    totalWords: Int
 ) {
-    val words = remember(text) {
-        text.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    val progressRatio = if (spokenWordCount > 0 && totalWords > 0) {
+        (spokenWordCount.toFloat() / totalWords.toFloat()).coerceIn(0f, 1f)
+    } else 1f
+
+    val koreanWords = remember(koreanText) {
+        koreanText.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
     }
-    val annotated = remember(words, spokenWordCount) {
+    val koreanReached = if (spokenWordCount <= 0 || totalWords <= 0) {
+        koreanWords.size
+    } else {
+        kotlin.math.ceil(koreanWords.size * progressRatio).toInt().coerceIn(1, koreanWords.size.coerceAtLeast(1))
+    }
+    val koreanAnnotated = remember(koreanWords, koreanReached) {
         buildAnnotatedString {
-            words.forEachIndexed { idx, word ->
+            koreanWords.forEachIndexed { idx, word ->
+                val isReached = idx < koreanReached
+                withStyle(
+                    SpanStyle(
+                        color = if (isReached) Color.White else Color.White.copy(alpha = 0.68f),
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                ) {
+                    append(word)
+                }
+                if (idx < koreanWords.lastIndex) append(" ")
+            }
+        }
+    }
+
+    val englishWords = remember(englishText) {
+        englishText.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    }
+    val englishAnnotated = remember(englishWords, spokenWordCount) {
+        buildAnnotatedString {
+            englishWords.forEachIndexed { idx, word ->
                 val isReached = spokenWordCount <= 0 || idx < spokenWordCount
                 withStyle(
                     SpanStyle(
@@ -887,36 +1000,64 @@ private fun WordSyncedSubtitleBanner(
                 ) {
                     append(word)
                 }
-                if (idx < words.lastIndex) append(" ")
+                if (idx < englishWords.lastIndex) append(" ")
             }
         }
     }
 
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = Color.Black.copy(alpha = 0.62f),
+        color = Color.Black.copy(alpha = 0.66f),
         modifier = Modifier.testTag("video_subtitle_banner")
     ) {
-        Text(
-            text = annotated,
-            color = Color.White,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.titleMedium.copy(
-                shadow = Shadow(
-                    color = Color.Black,
-                    offset = Offset(0f, 2f),
-                    blurRadius = 4f
-                )
-            ),
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-        )
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (koreanEnabled && koreanText.isNotBlank()) {
+                Text(
+                    text = koreanAnnotated,
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        shadow = Shadow(
+                            color = Color.Black,
+                            offset = Offset(0f, 2f),
+                            blurRadius = 4f
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (englishEnabled && englishText.isNotBlank()) {
+                Text(
+                    text = englishAnnotated,
+                    color = if (koreanEnabled) Color(0xFFFFF3C4) else Color.White,
+                    fontSize = if (koreanEnabled) 15.sp else 18.sp,
+                    lineHeight = if (koreanEnabled) 21.sp else 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        shadow = Shadow(
+                            color = Color.Black,
+                            offset = Offset(0f, 2f),
+                            blurRadius = 4f
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
 }
 

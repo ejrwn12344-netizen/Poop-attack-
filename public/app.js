@@ -153,7 +153,8 @@
     expressions: structuredClone(DEFAULT_EXPRESSIONS),
     scene: structuredClone(DEFAULT_SCENE),
     beats: structuredClone(DEFAULT_BEATS),
-    subtitlesEnabled: true,
+    koreanSubtitlesEnabled: true,
+    englishSubtitlesEnabled: false,
     quizSelections: {},
     video: {
       hasStarted: false,
@@ -165,7 +166,9 @@
       subtitleSpeaker: '',
       subtitleEmotion: '',
       subtitleText: '',
+      subtitleKorean: '',
       spokenWords: 0,
+      totalWords: 0,
     },
     exportStatus: null,
   };
@@ -272,7 +275,9 @@
       state.video.subtitleSpeaker = line.speaker;
       state.video.subtitleEmotion = delivery.emotion;
       state.video.subtitleText = clean;
+      state.video.subtitleKorean = (line.korean || '').trim();
       state.video.spokenWords = 1;
+      state.video.totalWords = words.length;
       updateLiveVideoDom();
 
       clearInterval(wordFallbackTimer);
@@ -464,14 +469,37 @@
 
     const subBox = document.getElementById('subtitle-box');
     if (subBox) {
-      const text = state.video.subtitleBeatId === beat.id && state.video.subtitleText
+      const isActiveSub = state.video.subtitleBeatId === beat.id;
+      const engText = isActiveSub && state.video.subtitleText
         ? state.video.subtitleText
         : beat.lines[0].english.replace(/\*\*/g, '');
-      const words = text.split(/\s+/).filter(Boolean);
-      const reached = state.video.subtitleBeatId === beat.id ? state.video.spokenWords : words.length;
-      subBox.innerHTML = words
-        .map((w, i) => (i < reached ? `<span>${escapeHtml(w)}</span>` : `<span class="subtitle-word-future">${escapeHtml(w)}</span>`))
-        .join(' ');
+      const korText = isActiveSub && state.video.subtitleKorean
+        ? state.video.subtitleKorean
+        : beat.lines[0].korean;
+
+      const engWords = engText.split(/\s+/).filter(Boolean);
+      const total = isActiveSub && state.video.totalWords > 0 ? state.video.totalWords : engWords.length;
+      const reachedEng = isActiveSub ? state.video.spokenWords : total;
+      const ratio = total > 0 ? Math.max(0, Math.min(1, reachedEng / total)) : 1;
+
+      const parts = [];
+      if (state.koreanSubtitlesEnabled && korText) {
+        const korWords = korText.split(/\s+/).filter(Boolean);
+        const reachedKor = isActiveSub && reachedEng > 0
+          ? Math.max(1, Math.ceil(korWords.length * ratio))
+          : korWords.length;
+        const korHtml = korWords
+          .map((w, i) => (i < reachedKor ? `<span>${escapeHtml(w)}</span>` : `<span class="subtitle-word-future">${escapeHtml(w)}</span>`))
+          .join(' ');
+        parts.push(`<div class="subtitle-line-ko">${korHtml}</div>`);
+      }
+      if (state.englishSubtitlesEnabled && engText) {
+        const engHtml = engWords
+          .map((w, i) => (i < reachedEng ? `<span>${escapeHtml(w)}</span>` : `<span class="subtitle-word-future">${escapeHtml(w)}</span>`))
+          .join(' ');
+        parts.push(`<div class="subtitle-line-en ${state.koreanSubtitlesEnabled ? '' : 'solo'}">${engHtml}</div>`);
+      }
+      subBox.innerHTML = parts.join('');
     }
   }
 
@@ -603,15 +631,27 @@
         ctx.font = 'bold 24px Nunito, sans-serif';
         ctx.fillText(`${beat.title} (${beat.timeRange})`, 44, 54);
 
-        if (state.subtitlesEnabled && beat.lines.length) {
+        if ((state.koreanSubtitlesEnabled || state.englishSubtitlesEnabled) && beat.lines.length) {
           const lIdx = beat.lines.length > 1 && prog >= 0.5 ? 1 : 0;
-          const sub = beat.lines[lIdx].english.replace(/\*\*/g, '');
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-          ctx.fillRect(64, 600, 1152, 86);
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 34px Nunito, sans-serif';
+          const activeLine = beat.lines[lIdx];
+          const korSub = state.koreanSubtitlesEnabled ? activeLine.korean : '';
+          const engSub = state.englishSubtitlesEnabled ? activeLine.english.replace(/\*\*/g, '') : '';
+          const bothOn = Boolean(korSub && engSub);
+          const boxHeight = bothOn ? 116 : 82;
+          const boxTop = 720 - boxHeight - 28;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
+          ctx.fillRect(64, boxTop, 1152, boxHeight);
           ctx.textAlign = 'center';
-          ctx.fillText(sub, 640, 654, 1100);
+          if (korSub) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 34px "Noto Sans KR", Nunito, sans-serif';
+            ctx.fillText(korSub, 640, bothOn ? boxTop + 46 : boxTop + 52, 1100);
+          }
+          if (engSub) {
+            ctx.fillStyle = bothOn ? '#fff3c4' : '#fff';
+            ctx.font = bothOn ? 'bold 28px Nunito, sans-serif' : 'bold 34px Nunito, sans-serif';
+            ctx.fillText(engSub, 640, bothOn ? boxTop + 92 : boxTop + 52, 1100);
+          }
           ctx.textAlign = 'left';
         }
         state.exportStatus = { type: 'loading', progress: Math.round(((f + 1) / totalFrames) * 100) };
@@ -994,7 +1034,7 @@
             <div class="stage-scrim"></div>
             <img id="flying-poop-el" class="flying-poop" src="./assets/images/img_poop_icon.jpg" style="display:none" alt="" />
             ${
-              state.subtitlesEnabled
+              state.koreanSubtitlesEnabled || state.englishSubtitlesEnabled
                 ? `<div class="subtitle-overlay"><div id="subtitle-box" class="subtitle-box"></div></div>`
                 : ''
             }
@@ -1008,10 +1048,11 @@
                   : ''
               }
             </div>
-            <div style="display:flex; gap:8px">
+            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end">
               ${
                 state.video.hasStarted
-                  ? `<button id="overlay-cc-btn" class="overlay-pill ${state.subtitlesEnabled ? 'cc-on' : ''}">${state.subtitlesEnabled ? 'CC On' : 'CC Off'}</button>`
+                  ? `<button id="overlay-ko-btn" class="overlay-pill ${state.koreanSubtitlesEnabled ? 'cc-on' : ''}">${state.koreanSubtitlesEnabled ? '한글 ON' : '한글 OFF'}</button>
+                     <button id="overlay-en-btn" class="overlay-pill ${state.englishSubtitlesEnabled ? 'en-on' : ''}">${state.englishSubtitlesEnabled ? 'EN ON' : 'EN OFF'}</button>`
                   : ''
               }
               <button id="overlay-fs-btn" class="overlay-pill">${state.video.isFullScreen ? '✕ 전체화면 닫기' : '⛶ 전체화면'}</button>
@@ -1030,8 +1071,15 @@
               ${state.video.isPlaying ? '⏸ Pause' : state.video.hasStarted && state.video.elapsedSec < 30 ? '▶ Resume' : '▶ Play'}
             </button>
             <button id="ctrl-replay-btn" class="btn btn-outline" style="flex:1">↺ Replay</button>
-            <button id="ctrl-cc-btn" class="btn btn-outline">${state.subtitlesEnabled ? 'CC On' : 'CC Off'}</button>
             <button id="ctrl-fs-btn" class="btn btn-outline">${state.video.isFullScreen ? 'Exit Full' : '⛶ Full Screen'}</button>
+          </div>
+          <div class="row-actions">
+            <button id="ctrl-ko-btn" class="btn ${state.koreanSubtitlesEnabled ? 'btn-primary' : 'btn-outline'} btn-sm" style="flex:1">
+              ${state.koreanSubtitlesEnabled ? '🇰🇷 한글 자막 ON' : '🇰🇷 한글 자막 OFF'}
+            </button>
+            <button id="ctrl-en-btn" class="btn ${state.englishSubtitlesEnabled ? 'btn-secondary' : 'btn-outline'} btn-sm" style="flex:1">
+              ${state.englishSubtitlesEnabled ? '🇺🇸 영어 자막 ON' : '🇺🇸 영어 자막 OFF'}
+            </button>
           </div>
         </div>
 
@@ -1053,17 +1101,28 @@
 
       const coverBtn = document.getElementById('cover-play-btn');
       if (coverBtn) coverBtn.onclick = playOrResumeVideo;
-      const ccTop = document.getElementById('overlay-cc-btn');
-      if (ccTop) {
-        ccTop.onclick = () => {
-          state.subtitlesEnabled = !state.subtitlesEnabled;
+      const koTop = document.getElementById('overlay-ko-btn');
+      if (koTop) {
+        koTop.onclick = () => {
+          state.koreanSubtitlesEnabled = !state.koreanSubtitlesEnabled;
+          render();
+        };
+      }
+      const enTop = document.getElementById('overlay-en-btn');
+      if (enTop) {
+        enTop.onclick = () => {
+          state.englishSubtitlesEnabled = !state.englishSubtitlesEnabled;
           render();
         };
       }
       document.getElementById('overlay-fs-btn').onclick = toggleFullScreen;
       document.getElementById('ctrl-fs-btn').onclick = toggleFullScreen;
-      document.getElementById('ctrl-cc-btn').onclick = () => {
-        state.subtitlesEnabled = !state.subtitlesEnabled;
+      document.getElementById('ctrl-ko-btn').onclick = () => {
+        state.koreanSubtitlesEnabled = !state.koreanSubtitlesEnabled;
+        render();
+      };
+      document.getElementById('ctrl-en-btn').onclick = () => {
+        state.englishSubtitlesEnabled = !state.englishSubtitlesEnabled;
         render();
       };
       document.getElementById('ctrl-play-btn').onclick = () => {
